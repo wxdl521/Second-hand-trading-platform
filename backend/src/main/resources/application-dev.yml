@@ -1,0 +1,10 @@
+logging:
+  level:
+    com.syxs: debug
+    org.hibernate.SQL: info
+
+syxs:
+  otp:
+    mode: console
+  ai:
+    ollama-enabled: false

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: syxs-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-syxs_local_2025}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-syxs_db}
+      MYSQL_USER: ${MYSQL_USER:-syxs}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-syxs123}
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

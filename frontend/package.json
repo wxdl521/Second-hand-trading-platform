@@ -1,0 +1,29 @@
+{
+  "name": "shangyouxinsheng-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dev:admin": "set VITE_ADMIN_APP=1&& vite --configLoader runner",
+    "build:admin": "set VITE_ADMIN_APP=1&& vite build --configLoader runner",
+    "preview:admin": "set VITE_ADMIN_APP=1&& vite preview --port 4174"
+  },
+  "dependencies": {
+    "@vueuse/core": "^14.2.1",
+    "axios": "^1.8.4",
+    "echarts": "^6.0.0",
+    "element-plus": "^2.13.6",
+    "pinia": "^2.1.7",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "sass": "^1.86.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.4"
+  }
+}

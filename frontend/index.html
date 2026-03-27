@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      const isAdminApp = import.meta.env.VITE_ADMIN_APP === '1'
+      document.title = isAdminApp ? '尚有新生管理系统' : '尚有新生'
+      ;(async () => {
+        await import(isAdminApp ? '/src-admin/main.ts' : '/src/main.ts')
+      })()
+    </script>
+  </body>
+</html>
