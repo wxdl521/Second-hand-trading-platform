@@ -2,6 +2,7 @@ package com.syxs.module.message.controller;
 
 import com.syxs.common.result.R;
 import com.syxs.common.support.CurrentUserResolver;
+import com.syxs.module.message.dto.UserMessageVO;
 import com.syxs.module.message.entity.UserMessage;
 import com.syxs.module.message.service.UserMessageService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,13 +27,16 @@ public class MessageController {
     }
 
     @GetMapping("/list")
-    public R<List<UserMessage>> list(HttpServletRequest request) {
-        return R.ok(userMessageService.listMessages(resolvePhone(request)));
+    public R<List<UserMessageVO>> list(HttpServletRequest request) {
+        return R.ok(userMessageService.listMessages(resolvePhone(request)).stream()
+            .map(UserMessageVO::from)
+            .toList());
     }
 
     @PostMapping("/{id}/read")
-    public R<UserMessage> markRead(@PathVariable Long id, HttpServletRequest request) {
-        return R.ok(userMessageService.markRead(id, resolvePhone(request)));
+    public R<UserMessageVO> markRead(@PathVariable Long id, HttpServletRequest request) {
+        UserMessage message = userMessageService.markRead(id, resolvePhone(request));
+        return R.ok(UserMessageVO.from(message));
     }
 
     private String resolvePhone(HttpServletRequest request) {

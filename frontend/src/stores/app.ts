@@ -20,6 +20,7 @@ import type {
 } from '@/types'
 
 const STORAGE_KEY = 'syxs-local-state'
+const LOCAL_AUTH_FALLBACK_ENABLED = import.meta.env.VITE_LOCAL_AUTH_FALLBACK === 'true'
 
 const roleByPhone: Record<string, UserRole> = {
   '13800000001': 'USER',
@@ -66,6 +67,12 @@ const resolveCarbonLevel = (balance: number) => {
     return 'Lv.2 低碳买家'
   }
   return 'Lv.1 绿色新手'
+}
+
+const ensureLocalAuthFallbackEnabled = () => {
+  if (!LOCAL_AUTH_FALLBACK_ENABLED) {
+    throw new Error('当前为后端联调模式，请使用统一 API 认证流程。')
+  }
 }
 
 interface AppState {
@@ -131,13 +138,14 @@ export const useAppStore = defineStore('app', {
         return
       }
 
-      const parsed = JSON.parse(saved) as AppState
-      const accounts = mergeSeedAccounts(parsed.accounts ?? [])
+      const parsed = JSON.parse(saved) as Partial<AppState>
+      const accounts = mergeSeedAccounts([])
       this.$patch({
         ...parsed,
         currentUser: null,
         authToken: null,
         refreshToken: null,
+        otpCodes: {},
         carbonSummary: null,
         accounts
       })
@@ -150,8 +158,8 @@ export const useAppStore = defineStore('app', {
           currentUser: null,
           authToken: null,
           refreshToken: null,
-          otpCodes: this.otpCodes,
-          accounts: this.accounts,
+          otpCodes: {},
+          accounts: [],
           goods: this.goods,
           orders: this.orders,
           carbonRecords: this.carbonRecords,
@@ -162,6 +170,7 @@ export const useAppStore = defineStore('app', {
       )
     },
     login(phone: string, password: string) {
+      ensureLocalAuthFallbackEnabled()
       const matched = this.accounts.find((item) => item.phone === phone && item.password === password)
       if (!matched) {
         throw new Error('手机号或密码不正确')
@@ -174,6 +183,7 @@ export const useAppStore = defineStore('app', {
       this.persist()
     },
     register(name: string, phone: string, password: string) {
+      ensureLocalAuthFallbackEnabled()
       if (this.accounts.some((item) => item.phone === phone)) {
         throw new Error('该手机号已注册')
       }
@@ -200,6 +210,7 @@ export const useAppStore = defineStore('app', {
       this.persist()
     },
     sendOtp(phone: string) {
+      ensureLocalAuthFallbackEnabled()
       if (!phone) {
         throw new Error('请先输入手机号')
       }
@@ -213,6 +224,7 @@ export const useAppStore = defineStore('app', {
       this.persist()
     },
     loginWithOtp(phone: string, otpCode: string) {
+      ensureLocalAuthFallbackEnabled()
       const matched = this.accounts.find((item) => item.phone === phone)
       if (!matched) {
         throw new Error('该手机号尚未注册')
@@ -230,6 +242,7 @@ export const useAppStore = defineStore('app', {
       this.persist()
     },
     registerWithOtp(name: string, phone: string, otpCode: string, password: string) {
+      ensureLocalAuthFallbackEnabled()
       if (this.accounts.some((item) => item.phone === phone)) {
         throw new Error('该手机号已注册')
       }

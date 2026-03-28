@@ -1,10 +1,12 @@
 package com.syxs.module.ai.controller;
 
 import com.syxs.common.result.R;
+import com.syxs.common.support.CurrentUserResolver;
 import com.syxs.module.ai.dto.AiEstimateTaskRequest;
 import com.syxs.module.ai.dto.AiEstimateTaskVO;
 import com.syxs.module.ai.service.AiEstimateService;
 import com.syxs.module.file.service.LocalFileStorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import java.io.IOException;
@@ -29,11 +31,14 @@ public class AiEstimateController {
 
     private final AiEstimateService aiEstimateService;
     private final LocalFileStorageService localFileStorageService;
+    private final CurrentUserResolver currentUserResolver;
 
     public AiEstimateController(AiEstimateService aiEstimateService,
-                                LocalFileStorageService localFileStorageService) {
+                                LocalFileStorageService localFileStorageService,
+                                CurrentUserResolver currentUserResolver) {
         this.aiEstimateService = aiEstimateService;
         this.localFileStorageService = localFileStorageService;
+        this.currentUserResolver = currentUserResolver;
     }
 
     @PostMapping("/estimate")
@@ -53,8 +58,9 @@ public class AiEstimateController {
     }
 
     @PostMapping(value = "/estimate/upload", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public R<AiEstimateTaskVO> createTask(@Validated @RequestBody AiEstimateTaskRequest request) {
-        return R.ok(aiEstimateService.createTask(request));
+    public R<AiEstimateTaskVO> createTask(@Validated @RequestBody AiEstimateTaskRequest request,
+                                          HttpServletRequest httpRequest) {
+        return R.ok(aiEstimateService.createTask(request, resolvePhone(httpRequest)));
     }
 
     @PostMapping(value = "/estimate/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -64,13 +70,17 @@ public class AiEstimateController {
     }
 
     @GetMapping("/estimate/{estimateId}")
-    public R<AiEstimateTaskVO> task(@PathVariable Long estimateId) {
-        return R.ok(aiEstimateService.getTask(estimateId));
+    public R<AiEstimateTaskVO> task(@PathVariable Long estimateId, HttpServletRequest request) {
+        return R.ok(aiEstimateService.getTask(estimateId, resolvePhone(request)));
     }
 
     @GetMapping("/estimate/goods/{goodsId}")
-    public R<AiEstimateTaskVO> latestGoodsTask(@PathVariable Long goodsId) {
-        return R.ok(aiEstimateService.getLatestTaskForGoods(goodsId));
+    public R<AiEstimateTaskVO> latestGoodsTask(@PathVariable Long goodsId, HttpServletRequest request) {
+        return R.ok(aiEstimateService.getLatestTaskForGoods(goodsId, resolvePhone(request)));
+    }
+
+    private String resolvePhone(HttpServletRequest request) {
+        return currentUserResolver.resolvePhone(request);
     }
 
     @Data

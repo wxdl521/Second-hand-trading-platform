@@ -1,6 +1,5 @@
 package com.syxs.module.user.controller;
 
-import com.syxs.common.exception.BusinessException;
 import com.syxs.common.result.R;
 import com.syxs.common.support.CurrentUserResolver;
 import com.syxs.module.user.dto.ChangePasswordRequest;
