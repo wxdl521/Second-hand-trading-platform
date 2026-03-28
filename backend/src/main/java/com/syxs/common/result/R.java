@@ -15,7 +15,7 @@ public class R<T> {
     private Long timestamp;
 
     public static <T> R<T> ok(T data) {
-        return new R<>(0, "success", data, System.currentTimeMillis());
+        return new R<>(0, "成功", data, System.currentTimeMillis());
     }
 
     public static <T> R<T> fail(String message) {

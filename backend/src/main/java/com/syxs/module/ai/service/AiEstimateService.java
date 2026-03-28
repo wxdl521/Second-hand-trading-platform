@@ -6,7 +6,10 @@ import com.syxs.module.ai.dto.AiEstimateTaskRequest;
 import com.syxs.module.ai.dto.AiEstimateTaskVO;
 import com.syxs.module.ai.entity.AiEstimate;
 import com.syxs.module.ai.repository.AiEstimateRepository;
+import com.syxs.module.goods.entity.Goods;
 import com.syxs.module.goods.repository.GoodsRepository;
+import com.syxs.module.user.entity.User;
+import com.syxs.module.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -25,15 +28,18 @@ public class AiEstimateService {
     private final OllamaClient ollamaClient;
     private final AiEstimateRepository aiEstimateRepository;
     private final GoodsRepository goodsRepository;
+    private final UserRepository userRepository;
 
     public AiEstimateService(RuleBasedPricingEngine pricingEngine,
                              OllamaClient ollamaClient,
                              AiEstimateRepository aiEstimateRepository,
-                             GoodsRepository goodsRepository) {
+                             GoodsRepository goodsRepository,
+                             UserRepository userRepository) {
         this.pricingEngine = pricingEngine;
         this.ollamaClient = ollamaClient;
         this.aiEstimateRepository = aiEstimateRepository;
         this.goodsRepository = goodsRepository;
+        this.userRepository = userRepository;
     }
 
     @Cacheable(
@@ -92,7 +98,8 @@ public class AiEstimateService {
     }
 
     @Transactional
-    public AiEstimateTaskVO createTask(AiEstimateTaskRequest request) {
+    public AiEstimateTaskVO createTask(AiEstimateTaskRequest request, String operatorPhone) {
+        assertGoodsOwnership(request.getGoodsId(), operatorPhone);
         AiEstimate estimate = new AiEstimate();
         estimate.setGoodsId(request.getGoodsId());
         estimate.setStatus("PROCESSING");
@@ -127,12 +134,15 @@ public class AiEstimateService {
         }
     }
 
-    public AiEstimateTaskVO getTask(Long estimateId) {
-        return toVO(aiEstimateRepository.findById(estimateId)
-            .orElseThrow(() -> new BusinessException("Estimate task not found")));
+    public AiEstimateTaskVO getTask(Long estimateId, String operatorPhone) {
+        AiEstimate estimate = aiEstimateRepository.findById(estimateId)
+            .orElseThrow(() -> new BusinessException("Estimate task not found"));
+        assertGoodsOwnership(estimate.getGoodsId(), operatorPhone);
+        return toVO(estimate);
     }
 
-    public AiEstimateTaskVO getLatestTaskForGoods(Long goodsId) {
+    public AiEstimateTaskVO getLatestTaskForGoods(Long goodsId, String operatorPhone) {
+        assertGoodsOwnership(goodsId, operatorPhone);
         AiEstimate estimate = aiEstimateRepository.findFirstByGoodsIdAndStatusOrderByUpdatedAtDescIdDesc(goodsId, "DONE")
             .orElseGet(() -> aiEstimateRepository.findAllByGoodsIdOrderByUpdatedAtDescIdDesc(goodsId).stream()
                 .findFirst()
@@ -177,6 +187,22 @@ public class AiEstimateService {
             .createdAt(estimate.getCreatedAt())
             .updatedAt(estimate.getUpdatedAt())
             .build();
+    }
+
+    private void assertGoodsOwnership(Long goodsId, String operatorPhone) {
+        if (goodsId == null) {
+            return;
+        }
+        User operator = userRepository.findByPhone(operatorPhone)
+            .orElseThrow(() -> new BusinessException("User not found"));
+        if (operator.getRole() != null && "ADMIN".equalsIgnoreCase(operator.getRole())) {
+            return;
+        }
+        Goods goods = goodsRepository.findById(goodsId)
+            .orElseThrow(() -> new BusinessException("Goods not found"));
+        if (goods.getSellerPhone() == null || !goods.getSellerPhone().equals(operatorPhone)) {
+            throw new BusinessException("You are not allowed to access this estimate");
+        }
     }
 
     private BigDecimal resolveBrandFactor(String brand) {
