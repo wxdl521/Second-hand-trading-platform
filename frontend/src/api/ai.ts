@@ -26,7 +26,7 @@ interface UploadPayload {
 interface EstimateTaskPayload {
   id: number
   goodsId?: number
-  status: 'PROCESSING' | 'DONE' | 'FAILED'
+  status: 'PENDING' | 'PROCESSING' | 'DONE' | 'FAILED'
   estimatePrice?: number
   priceMin?: number
   priceMax?: number

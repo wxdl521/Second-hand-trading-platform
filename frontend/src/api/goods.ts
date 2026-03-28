@@ -197,12 +197,6 @@ const toBackendGoodsStatusParam = (status?: GoodsItem['status'] | '全部') => {
   return 'ON_SALE'
 }
 
-const mapGoodsStatus = (status: string): GoodsItem['status'] => {
-  if (status === 'RESERVED') return '已预订'
-  if (status === 'SOLD') return '已售出'
-  return '在售中'
-}
-
 const mapBackendGoodsStatus = (status: string): GoodsItem['status'] => {
   if (status === 'DRAFT') return '草稿' as GoodsItem['status']
   if (status === 'PENDING_APPRAISAL') return '待审核' as GoodsItem['status']
@@ -218,21 +212,6 @@ const sortGoods = (goods: GoodsItem[], sortMode: GoodsListQuery['sort'] = 'lates
     if (sortMode === 'priceDesc') return right.price - left.price
     return right.createdAt.localeCompare(left.createdAt)
   })
-
-const mergeCatalogs = (...catalogGroups: GoodsItem[][]) => {
-  const catalog = new Map<string, GoodsItem>()
-  const titleKeys = new Set<string>()
-
-  catalogGroups.flat().forEach((item) => {
-    const key = `${item.brand}-${item.title}`
-    if (!catalog.has(item.id) && !titleKeys.has(key)) {
-      catalog.set(item.id, item)
-      titleKeys.add(key)
-    }
-  })
-
-  return Array.from(catalog.values())
-}
 
 const mapListGoods = (payload: GoodsListPayload, current?: GoodsItem): GoodsItem => {
   const legacy = findLegacyDemoGoods(payload)
@@ -344,27 +323,6 @@ const buildGoodsParams = (query: ReturnType<typeof normalizeGoodsQuery>) => ({
   ...(query.sort !== 'latest' ? { sort: query.sort } : {})
 })
 
-const applyLocalGoodsQuery = (goods: GoodsItem[], query: GoodsListQuery = {}) => {
-  const normalizedQuery = normalizeGoodsQuery(query)
-  const keyword = normalizedQuery.keyword?.toLowerCase()
-
-  return sortGoods(
-    goods.filter((item) => {
-      const matchesKeyword =
-        !keyword ||
-        [item.title, item.brand, item.category, item.story, item.description]
-          .join(' ')
-          .toLowerCase()
-          .includes(keyword)
-      const matchesCategory = !normalizedQuery.category || item.category === normalizedQuery.category
-      const matchesPrice =
-        typeof normalizedQuery.maxPrice !== 'number' || item.price <= normalizedQuery.maxPrice
-      return matchesKeyword && matchesCategory && matchesPrice
-    }),
-    normalizedQuery.sort
-  )
-}
-
 export const listGoods = async (query: GoodsListQuery = {}): Promise<GoodsItem[]> => {
   const store = getAppStore()
   const normalizedQuery = normalizeGoodsQuery(query)
@@ -403,8 +361,9 @@ export const getGoodsDetail = async (id: string): Promise<GoodsItem | undefined>
 
 export const listMyGoods = async (status?: GoodsItem['status'] | '全部'): Promise<GoodsItem[]> => {
   const store = getAppStore()
+  const statusParam = toBackendGoodsStatusParam(status)
   const response = await apiClient.get<ApiResponse<GoodsListPayload[]>>('/goods/my', {
-    params: toBackendGoodsStatusParam(status) ? { status: toBackendGoodsStatusParam(status) } : {}
+    params: statusParam ? { status: statusParam } : {}
   })
   const goods = response.data.data.map((item) =>
     mapListGoods(item, store.goods.find((goodsItem) => goodsItem.id === String(item.id)))

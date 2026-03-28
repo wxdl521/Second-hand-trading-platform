@@ -144,7 +144,7 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("Real name and ID number are required");
         }
         user.setKycLevel(KycLevel.L3);
-        user.setKycReviewStatus(null);
+        user.setKycReviewStatus("已通过");
         touchLastActive(user);
         User saved = userRepository.save(user);
         return toProfile(saved, null);

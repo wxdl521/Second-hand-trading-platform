@@ -21,9 +21,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ApiVersionPathRewriteFilter apiVersionPathRewriteFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          ApiVersionPathRewriteFilter apiVersionPathRewriteFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.apiVersionPathRewriteFilter = apiVersionPathRewriteFilter;
     }
 
     @Bean
@@ -67,8 +70,9 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/api/goods/my", "/api/goods/my/favorites").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/goods/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/ai/estimate/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/ai/estimate", "/api/ai/estimate/upload", "/api/file/upload").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/ai/estimate/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/ai/estimate", "/api/ai/estimate/upload").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/file/upload").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/goods/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/goods/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/goods/**").authenticated()
@@ -76,6 +80,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/user/**", "/api/order/**", "/api/carbon/**", "/api/appraise/**", "/api/message/**").authenticated()
                 .anyRequest().permitAll()
             )
+            .addFilterBefore(apiVersionPathRewriteFilter, JwtAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
